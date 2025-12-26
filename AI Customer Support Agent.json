@@ -1,0 +1,962 @@
+{
+  "name": "AI Customer Support Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "I need help support immediately to check my billing issue.",
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -3968,
+        -1168
+      ],
+      "id": "6abc948f-9f29-40dd-a804-ea6c064604fd",
+      "name": "When chat message received",
+      "webhookId": "35201096-81a4-4609-9c25-7f49638778d6"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are a language detection engine.\nDetect the language of the user's message.\nRespond ONLY in valid JSON.\nReturn ONLY raw JSON. Do not use markdown, do not wrap in ```json``` code fences.\n\nFormat:\n{\n  \"language\": \"English\",\n  \"iso_code\": \"en\"\n}"
+            },
+            {
+              "content": "={{$json.chatInput}}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        -3760,
+        -1168
+      ],
+      "id": "f8fb84fd-d723-4134-b955-9bcd760743cd",
+      "name": "Message a model",
+      "alwaysOutputData": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "iiKnRCbkUNN3Vj2V",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d2a6123d-df8a-4bda-8371-2df0465e36e3",
+              "name": "lang_iso",
+              "value": "={{ JSON.parse($json.output[0].content[0].text).iso_code }}",
+              "type": "string"
+            },
+            {
+              "id": "b99ed06a-7b09-40fe-a6ec-fdb47b0938f3",
+              "name": "lang_name",
+              "value": "={{ JSON.parse($json.output[0].content[0].text).language }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -3408,
+        -1168
+      ],
+      "id": "fcfeb245-9435-4842-bd6c-66611cff6785",
+      "name": "Extract Language"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "You are a sentiment analysis engine for customer support messages.\n\nClassify the sentiment and urgency of the message.\nReturn ONLY valid JSON (no markdown).\n\nFormat:\n{\n  \"sentiment\": \"positive | neutral | negative\",\n  \"urgency\": true | false,\n  \"sentiment_score\": 0-100,\n  \"urgency_score\": 0-100\n}"
+            },
+            {
+              "content": "=Text: {{$json.chatInput || $node[\"When chat message received\"].json.chatInput}}\nLanguage: {{$json.lang_iso}}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        -3200,
+        -1168
+      ],
+      "id": "3309ae7b-0a1f-4a2c-8741-52d7a9d528f0",
+      "name": "Sentiment Analysis",
+      "alwaysOutputData": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "iiKnRCbkUNN3Vj2V",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "326a3599-f50e-4fb9-afc7-103f70e1f037",
+              "name": "sentiment",
+              "value": "={{ JSON.parse($json.output[0].content[0].text).sentiment }}",
+              "type": "string"
+            },
+            {
+              "id": "7af8a7c6-c990-4064-8dc6-e370da1b96f3",
+              "name": "is_urgent",
+              "value": "={{ JSON.parse($json.output[0].content[0].text).urgency }}",
+              "type": "boolean"
+            },
+            {
+              "id": "9b4bc1d0-dd09-4dba-b05c-6d841e9b7007",
+              "name": "sentiment_score",
+              "value": "={{ JSON.parse($json.output[0].content[0].text).sentiment_score }}",
+              "type": "number"
+            },
+            {
+              "id": "3ae423b6-651c-49f1-9ebe-8c77d08fc394",
+              "name": "urgency_score",
+              "value": "={{ JSON.parse($json.output[0].content[0].text).urgency_score }}\n",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2848,
+        -1168
+      ],
+      "id": "6da921c3-62f6-43f9-a314-8eaebc4e3b42",
+      "name": "Extract Sentiment"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b6b74a3c-44ff-4652-89f9-ce998d09a6f5",
+              "leftValue": "={{$json.urgency_score}}",
+              "rightValue": 80,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            },
+            {
+              "id": "8427bf96-1cfb-4698-83d9-bd5e7f1ed9d9",
+              "leftValue": "={{ $json.sentiment === \"negative\" && $json.urgency_score >= 60 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2640,
+        -1168
+      ],
+      "id": "242e32a0-2407-4799-a2a8-8041cea97a1b",
+      "name": "Check Urgency",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "You are an intent classifier for a customer support chatbot.\nClassify the user's message into exactly ONE intent from:\nbilling, technical, general, faq\n\nReturn ONLY valid JSON (no markdown).\nFormat:\n{\"intent\":\"billing|technical|general|faq\"}"
+            },
+            {
+              "content": "=Text:{{$node[\"When chat message received\"].json.chatInput}}\nLanguage:{{$node[\"Extract Language\"].json.lang_iso}}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        -2480,
+        -1152
+      ],
+      "id": "9004fa5c-c456-42fa-a3df-8bbeb30c195e",
+      "name": "Intent Classification",
+      "alwaysOutputData": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "iiKnRCbkUNN3Vj2V",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b00b6ae9-e5cc-4468-9e52-fc85dd327c90",
+              "name": "intent",
+              "value": "={{ JSON.parse($json.output[0].content[0].text).intent }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2128,
+        -1152
+      ],
+      "id": "6aa1c0e1-122b-44dd-8dd8-7576dd9940eb",
+      "name": "Extract Intent"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.intent}}",
+                    "rightValue": "billing",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "80d323bf-7d9e-4f87-bd34-61c4f49379fb"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "billing"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "0ea9f6b7-f80d-454e-a3b5-1bda7254ec55",
+                    "leftValue": "={{$json.intent}}",
+                    "rightValue": "technical",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "technical"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d7bed03e-2ca0-42e3-9c79-b163744d9883",
+                    "leftValue": "={{$json.intent}}",
+                    "rightValue": "general",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "general"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -2800,
+        -880
+      ],
+      "id": "79862ba1-1f3a-4e12-88bc-3d5d5c6637bc",
+      "name": "Intent Router"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "You are a customer support AI assistant.\n\nIntent: General\nUrgency: Not urgent\n\nRespond politely, clearly, and concisely.\nIf the user is asking a question, answer it.\nIf the message is vague, ask a short clarifying question.\nKeep the tone friendly and professional.\n"
+            },
+            {
+              "content": "={{$json.output[0].content[0].text}}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        -2480,
+        -720
+      ],
+      "id": "edff45f1-5f7d-4094-a036-7962824ac640",
+      "name": "General Branch",
+      "credentials": {
+        "openAiApi": {
+          "id": "iiKnRCbkUNN3Vj2V",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "You are a customer support AI assistant.\n\nIntent: Technical\nUrgency: Not urgent\n\nRespond politely, clearly, and concisely.\nIf the user is asking a question, answer it.\nIf the message is vague, ask a short clarifying question.\nKeep the tone friendly and professional.\n\n\n"
+            },
+            {
+              "content": "={{$json.output[0].content[0].text}}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        -2480,
+        -864
+      ],
+      "id": "2a1b041d-0aa9-42af-9245-8936d002426f",
+      "name": "Technical Branch",
+      "credentials": {
+        "openAiApi": {
+          "id": "iiKnRCbkUNN3Vj2V",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "You are a customer support AI assistant.\n\nIntent: Billing\nUrgency: Not urgent\n\nRespond politely, clearly, and concisely.\nIf the user is asking a question, answer it.\nIf the message is vague, ask a short clarifying question.\nKeep the tone friendly and professional.\n"
+            },
+            {
+              "content": "={{$json.output[0].content[0].text}}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        -2480,
+        -1008
+      ],
+      "id": "f15a45c5-1e3a-481a-98ba-645900bee169",
+      "name": "Billing Branch2",
+      "credentials": {
+        "openAiApi": {
+          "id": "iiKnRCbkUNN3Vj2V",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output[0].content[0].text }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        -2128,
+        -720
+      ],
+      "id": "77c41b94-4380-4b7d-baae-fedb42f49527",
+      "name": "General Response chat message"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output[0].content[0].text }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        -2128,
+        -864
+      ],
+      "id": "ebfd96ee-0952-4d35-a798-c8f5dcf18253",
+      "name": "Technical Response chat message1"
+    },
+    {
+      "parameters": {
+        "message": "={{ $json.output[0].content[0].text }}",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        -2128,
+        -1008
+      ],
+      "id": "832eaaeb-4070-4521-90c4-f161a148ad6e",
+      "name": "Billing Response chat message2"
+    },
+    {
+      "parameters": {
+        "message": "=This looks urgent. I’m escalating this to our support team right now.",
+        "waitUserReply": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chat",
+      "typeVersion": 1,
+      "position": [
+        -2464,
+        -1296
+      ],
+      "id": "d5c8a325-0a97-4b09-a7c4-ff1b133e3ac7",
+      "name": "Response chat message"
+    },
+    {
+      "parameters": {
+        "sendTo": "instruction.n8n@gmail.com",
+        "subject": "🚨 URGENT: New Customer Support Issue",
+        "message": "=🚨 Urgent customer support request received\n\nUser message:\n{{$json.output[0].content[0].text}}\n\nSentiment: {{$json.sentiment}}\nUrgency score: {{$json.urgency_score}}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -1920,
+        -1296
+      ],
+      "id": "aa63d9fc-cf44-48ca-93da-8c7b5a18d938",
+      "name": "Send a message",
+      "webhookId": "3154bf84-caf7-4932-ae07-629c5ba315c7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ddjswwKIwHwilKpX",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a577b056-5e95-4258-86dc-40f3f13c3c7b",
+              "leftValue": "={{ /human|agent|support|representative|manager|call me|phone/i.test($json.output?.[0]?.content?.[0]?.text || \"\") }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "9bc2bf9b-81b8-4912-bb3f-7103595dedd1",
+              "leftValue": "={{ $json.sentiment === \"negative\" && $json.urgency_score >= 75 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "07667c33-6b75-4035-9b06-ad44e495ef17",
+              "leftValue": "={{ $json.urgency_score >= 85 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1920,
+        -1008
+      ],
+      "id": "314ec1d8-e14d-4960-be9d-38c676c83c28",
+      "name": "Post-Response Escalation Check (Billing)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a577b056-5e95-4258-86dc-40f3f13c3c7b",
+              "leftValue": "={{ /human|agent|support|representative|manager|call me|phone/i.test($json.output?.[0]?.content?.[0]?.text || \"\") }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "9bc2bf9b-81b8-4912-bb3f-7103595dedd1",
+              "leftValue": "={{ $json.sentiment === \"negative\" && $json.urgency_score >= 75 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "07667c33-6b75-4035-9b06-ad44e495ef17",
+              "leftValue": "={{ $json.urgency_score >= 85 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1920,
+        -864
+      ],
+      "id": "89afad9e-064c-469c-929c-4e5286522373",
+      "name": "Post-Response Escalation Check (Technical)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a577b056-5e95-4258-86dc-40f3f13c3c7b",
+              "leftValue": "={{ /human|agent|support|representative|manager|call me|phone/i.test($json.output?.[0]?.content?.[0]?.text || \"\") }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "9bc2bf9b-81b8-4912-bb3f-7103595dedd1",
+              "leftValue": "={{ $json.sentiment === \"negative\" && $json.urgency_score >= 75 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "07667c33-6b75-4035-9b06-ad44e495ef17",
+              "leftValue": "={{ $json.urgency_score >= 85 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1920,
+        -720
+      ],
+      "id": "9d4f4a0d-457a-4927-a605-0cec463709a8",
+      "name": "Post-Response Escalation Check (General)"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Extract Language",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Language": {
+      "main": [
+        [
+          {
+            "node": "Sentiment Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sentiment Analysis": {
+      "main": [
+        [
+          {
+            "node": "Extract Sentiment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Sentiment": {
+      "main": [
+        [
+          {
+            "node": "Check Urgency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Urgency": {
+      "main": [
+        [
+          {
+            "node": "Response chat message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Intent Classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intent Classification": {
+      "main": [
+        [
+          {
+            "node": "Extract Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Intent": {
+      "main": [
+        [
+          {
+            "node": "Intent Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intent Router": {
+      "main": [
+        [
+          {
+            "node": "Billing Branch2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Technical Branch",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "General Branch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "General Branch": {
+      "main": [
+        [
+          {
+            "node": "General Response chat message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Technical Branch": {
+      "main": [
+        [
+          {
+            "node": "Technical Response chat message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Billing Branch2": {
+      "main": [
+        [
+          {
+            "node": "Billing Response chat message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response chat message": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Billing Response chat message2": {
+      "main": [
+        [
+          {
+            "node": "Post-Response Escalation Check (Billing)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Technical Response chat message1": {
+      "main": [
+        [
+          {
+            "node": "Post-Response Escalation Check (Technical)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "General Response chat message": {
+      "main": [
+        [
+          {
+            "node": "Post-Response Escalation Check (General)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post-Response Escalation Check (Billing)": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post-Response Escalation Check (Technical)": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post-Response Escalation Check (General)": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6abe2d24-d86c-48fb-b491-f987916938f9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2ace09ade82fdc0aaeb6bedb7198c20b7eb878f5e3b211a381c7422fe028319e"
+  },
+  "id": "dVkUnIwFImlvCh6v",
+  "tags": []
+}
